@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6ce46">
+  <meta name="description" content="Count Pokémon, add two groups, and choose the answer. A simple addition game for little learners.">
+  <title>Pokémon Count Club</title>
+  <style>
+    :root { color-scheme: light; --ink: #20344b; --muted: #54657a; --blue: #265fc7; --yellow: #f6ce46; --line: #d8e4ed; --green: #206342; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-height: 100svh; background-color: #f2f7fb; background-image: linear-gradient(#dce7ef66 1px, transparent 1px), linear-gradient(90deg, #dce7ef66 1px, transparent 1px); background-size: 28px 28px; color: var(--ink); font-family: ui-rounded, "Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif; }
+    button, input { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    button:disabled { cursor: default; }
+    button:focus-visible, a:focus-visible, input:focus-visible + span { outline: 4px solid var(--blue); outline-offset: 5px; }
+    .shell { width: min(1040px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar { min-height: 112px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 0; }
+    .brand { line-height: 1; transform: rotate(-2deg); }
+    .brand-name { display: block; width: fit-content; font-size: 1.85rem; letter-spacing: -.06em; font-weight: 900; }
+    .brand-sub { display: block; margin-top: 6px; width: fit-content; padding: 5px 8px; background: var(--yellow); font-size: .8rem; font-weight: 900; letter-spacing: .16em; }
+    .score { display: flex; align-items: center; gap: 9px; background: #fff; padding: 11px 16px; border: 1.5px solid var(--line); border-radius: 99px; font-size: .95rem; font-weight: 700; white-space: nowrap; }
+    .score svg { width: 22px; height: 22px; color: #b87800; fill: #f6ce46; }
+    main { padding: 16px 0 0; }
+    .intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 25px; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 3.7vw, 2.65rem); line-height: 1.12; font-weight: 900; letter-spacing: -.04em; }
+    .intro p { margin: 10px 0 0; font-size: 1.02rem; color: var(--muted); line-height: 1.5; }
+    fieldset { border: 0; padding: 0; margin: 0 0 2px; flex-shrink: 0; }
+    legend { font-size: .875rem; font-weight: 700; padding: 0; margin-bottom: 8px; }
+    .levels { display: flex; gap: 4px; background: #e3eaf1; padding: 5px; border-radius: 13px; }
+    .level { position: relative; cursor: pointer; }
+    .level input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .level span { display: block; padding: 11px 15px; border-radius: 9px; font-size: .9rem; font-weight: 800; transition: background .15s; }
+    .level input:checked + span { background: #fff; box-shadow: 0 2px 4px #20344b18; color: var(--blue); }
+    .game-card { position: relative; background: #fff; border: 2px solid var(--ink); border-radius: 25px; box-shadow: 0 7px 0 var(--ink); overflow: hidden; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 28px; border-bottom: 1.5px solid var(--line); }
+    .round { font-size: .875rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .species { display: flex; align-items: center; gap: 7px; font-size: .95rem; color: var(--muted); }
+    .species strong { color: var(--ink); font-weight: 800; }
+    .play-area { padding: 28px 32px 23px; }
+    .groups { display: grid; grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr); align-items: center; }
+    .group { border: 2px solid #b5d3f2; background: #f0f7ff; border-radius: 19px; min-height: 188px; padding: 20px 12px; display: flex; align-items: center; justify-content: center; }
+    .group.second { background: #fff9e5; border-color: #eace72; }
+    .sprite-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; max-width: 300px; }
+    .sprite { position: relative; display: block; flex: 0 0 auto; width: 80px; height: 80px; overflow: hidden; user-select: none; }
+    .sprite img { position: absolute; display: block; max-width: none; image-rendering: pixelated; -webkit-user-drag: none; }
+    .plus { text-align: center; font-family: "Trebuchet MS", sans-serif; font-size: 3.5rem; font-weight: 900; }
+    .equation { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 22px; font-size: 2rem; line-height: 1.1; font-weight: 800; }
+    .equation .num { min-width: 43px; text-align: center; }
+    .equation .operator { color: #6d7c8e; font-size: 1.7rem; }
+    .unknown { display: grid; place-items: center; width: 51px; height: 51px; border: 2px dashed #9aabc0; border-radius: 12px; color: #596d87; background: #f5f8fc; }
+    .answer-area { padding: 21px 32px 27px; background: #fafcfe; border-top: 1.5px solid var(--line); text-align: center; }
+    .answer-label { font-size: 1.075rem; font-weight: 800; margin: 0 0 17px; }
+    .answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(3.7rem, 100%), 1fr)); gap: 15px; max-width: 600px; margin: 0 auto; }
+    .answer { position: relative; min-height: 79px; padding: 12px; font-size: 2.2rem; line-height: 1.15; font-weight: 900; border: 2px solid var(--ink); border-radius: 15px; color: var(--ink); background: #fff; box-shadow: 0 4px 0 var(--ink); transition: transform .12s, box-shadow .12s, background .12s; }
+    .answer:not(:disabled):hover { background: #fff1b5; transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+    .answer:not(:disabled):active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+    .answer.wrong { background: #fff1e7; border-color: #b9571b; color: #8e3e12; box-shadow: 0 4px 0 #b9571b; animation: wiggle .25s; }
+    .feedback { min-height: 24px; margin: 16px 0 0; font-size: .95rem; color: var(--muted); line-height: 1.5; }
+    .feedback.retry { color: #934319; font-weight: 700; }
+    .result { padding: 27px 28px 24px; text-align: center; }
+    .success-heading { font-size: 1.8rem; font-weight: 900; color: var(--green); margin: 0 0 7px; letter-spacing: -.025em; }
+    .result p { font-size: 1.075rem; margin: 0; color: var(--muted); }
+    .total-group { display: flex; justify-content: center; align-items: center; background: #f0faf1; border: 2px solid #a0cca9; border-radius: 19px; padding: 16px; min-height: 150px; margin: 20px auto 0; max-width: 730px; }
+    .total-group .sprite-grid { max-width: 650px; gap: 7px; }
+    .total-group .sprite { animation: pop .3s both; animation-delay: var(--delay, 0ms); }
+    .result .equation { color: var(--green); margin-top: 20px; }
+    .result .total { background: #d8f0d9; min-width: 55px; min-height: 51px; padding: 8px 11px; border-radius: 12px; }
+    .next-area { border-top: 1.5px solid #cce0cf; padding: 23px 24px; background: #f6fbf6; text-align: center; }
+    .next { display: inline-flex; justify-content: center; align-items: center; gap: 14px; min-height: 62px; min-width: 250px; max-width: 100%; padding: 15px 24px; background: var(--yellow); color: var(--ink); border: 2px solid var(--ink); border-radius: 13px; box-shadow: 0 4px 0 var(--ink); font-weight: 900; font-size: 1.15rem; transition: transform .12s, box-shadow .12s; }
+    .next:hover { background: #ffdc66; }
+    .next:active { transform: translateY(4px); box-shadow: 0 0 0 var(--ink); }
+    .next svg { width: 20px; height: 20px; }
+    .footer { padding: 26px 0 20px; text-align: center; color: var(--muted); font-size: .8rem; line-height: 1.7; }
+    .footer a { color: #3a5876; text-underline-offset: 3px; }
+    .footer p { margin: 0; }
+    .copyright { font-size: .75rem; color: #64748b; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    noscript p { margin: 24px; padding: 24px; border: 2px solid var(--ink); background: #fff; text-align: center; }
+    @keyframes pop { from { opacity: 0; transform: scale(.6) translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes wiggle { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    @media (max-width: 700px) {
+      .shell { width: min(600px, calc(100% - 32px)); }
+      .topbar { min-height: 94px; }
+      main { padding-top: 8px; }
+      .intro { align-items: flex-start; flex-direction: column; gap: 17px; margin-bottom: 20px; }
+      fieldset { display: flex; flex-direction: column; width: 100%; }
+      legend { float: left; margin: 0 0 6px; }
+      .levels { width: fit-content; }
+      .level span { padding: 10px 17px; }
+      h1 { font-size: 2rem; max-width: 480px; }
+      .intro p { margin-top: 8px; }
+      .card-top { padding: 17px 20px; }
+      .play-area { padding: 21px 18px; }
+      .groups { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); }
+      .plus { font-size: 2.8rem; }
+      .group { min-height: 168px; padding: 12px 7px; border-radius: 15px; }
+      .sprite { width: 64px; height: 64px; }
+      .sprite-grid { gap: 2px; }
+      .answer-area { padding: 21px 20px 20px; }
+      .answers { gap: 12px; }
+      .answer { min-height: 71px; font-size: 2rem; }
+      .result { padding: 23px 18px; }
+      .total-group { padding: 14px 8px; }
+      .total-group .sprite-grid { max-width: 380px; gap: 4px; }
+    }
+    @media (max-width: 420px) {
+      .shell { width: calc(100% - 24px); }
+      .topbar { min-height: 86px; }
+      .brand-name { font-size: 1.65rem; }
+      .brand-sub { font-size: .7rem; }
+      .score { padding: 9px 12px; font-size: .85rem; }
+      h1 { font-size: 1.78rem; }
+      .intro { gap: 13px; margin-bottom: 16px; }
+      .intro p { font-size: .95rem; }
+      .game-card { border-radius: 20px; }
+      .card-top { padding: 14px 15px; flex-wrap: wrap; }
+      .round { font-size: .8rem; }
+      .species { font-size: .875rem; }
+      .play-area { padding: 18px 12px; }
+      .groups { grid-template-columns: minmax(0, 1fr) 31px minmax(0, 1fr); }
+      .group { padding: 10px 4px; min-height: 136px; }
+      .sprite { width: 52px; height: 52px; }
+      .plus { font-size: 2.4rem; }
+      .equation { font-size: 1.8rem; gap: 10px; margin-top: 17px; }
+      .answer-area { padding: 18px 14px; }
+      .answer-label { margin-bottom: 14px; }
+      .answers { gap: 9px; }
+      .answer { min-height: 63px; font-size: 1.85rem; padding: 10px 5px; border-radius: 12px; }
+      .feedback { font-size: .875rem; margin-top: 14px; }
+      .total-group .sprite-grid { max-width: 292px; gap: 4px; }
+      .total-group .sprite { width: 52px; height: 52px; }
+      .footer { padding-top: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Pokémon Count Club"><span class="brand-name">Pokémon</span><span class="brand-sub">COUNT CLUB</span></div>
+      <div class="score"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 2.5 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span id="score">0 solved</span></div>
+    </header>
+    <main>
+      <div class="intro">
+        <div><h1>How many Pokémon<br>altogether?</h1><p>Count each group, then choose a number.</p></div>
+        <fieldset id="difficulty"><legend>Addition practice</legend><div class="levels"><label class="level"><input type="radio" name="limit" value="5" checked><span>Up to 5</span></label><label class="level"><input type="radio" name="limit" value="10"><span>Up to 10</span></label></div></fieldset>
+      </div>
+      <section class="game-card" aria-label="Pokémon addition game">
+        <div class="card-top"><span class="round" id="round">Question 1</span><span class="species">Let’s count <strong id="species"></strong></span></div>
+        <div id="question-view">
+          <div class="play-area">
+            <div class="groups"><div class="group" id="group-a" role="img"></div><span class="plus" aria-hidden="true">+</span><div class="group second" id="group-b" role="img"></div></div>
+            <div class="equation" id="question-equation" role="img"></div>
+          </div>
+          <div class="answer-area"><p class="answer-label" id="answer-label">How many in all?</p><div class="answers" id="answers" role="group" aria-labelledby="answer-label"></div><p class="feedback" id="feedback" aria-live="polite" aria-atomic="true">Take your time. You can do it!</p></div>
+        </div>
+        <div id="result-view" hidden>
+          <div class="result"><h2 class="success-heading">You got it!</h2><p id="result-copy"></p><div class="total-group" id="total-group" role="img"></div><div class="equation" id="result-equation" role="img"></div></div>
+          <div class="next-area"><button class="next" id="next" type="button">Next question<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button></div>
+        </div>
+      </section>
+      <p class="sr-only" role="status" id="announcement" aria-atomic="true"></p>
+    </main>
+    <footer class="footer"><p>Sprites from <a href="https://pokemondb.net/sprites" target="_blank" rel="noopener noreferrer">Pokémon Database</a>.</p><p class="copyright">Pokémon © Nintendo / Creatures Inc. / GAME FREAK inc.</p></footer>
+  </div>
+  <noscript><p>Please enable JavaScript to play the counting game.</p></noscript>
+  <script id="pokemon-assets" type="application/json">[{"name":"Pikachu","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAZ9JREFUeNrt2MFugzAQhGEPbDebmeT9X7fYMiBoDpVYDlX9HUBJpPklKxcowzAMwzAMw2/h7v0Jfz4w4eb9+wN2b2Dmz8C0yArMJO28Pi+STg48BdwpzVVuwKt6U9X3UxhJ93i9XlK4mq+2nxeIeDVaLfPYTux6IXTaB1A6ly4XXB0BSuE4/Ha5YAGqmd+YJKFsQhkBvKkGmI+BkBIKNkOyWI9on4tQSsAn1+75VNh6/CkBU2Ueff/5IPp+TsGeVJiT7iE+FkTbTws8yN0eYH6gF0jU/YVWKFc4z7B9pwoo14AntkfZ5rMDQjGyAcp1EA/amVufzwBJ3KkGWsFLDqhiFZR6oBaspAjJ1YTUWM1GVgD7cqhD2yctKyDfLqIkWEQwDCmBOAQYEhELs5ICLqlH+pVABEoSeN/FWiEJuCcVILmiRVDvPVDSCi7JXY2v+wQ8KQDqiC1g5kDJAB4L7AWg5ACrdZ3rPlGyOD+xkgb8IFDyACQjsLA79s3Ct78kzD3CU/flCgOOzyO5JwQ7fpYL5U4AxhuiYRiGYRiGf+gb/jggiRahc9gAAAAASUVORK5CYII=","bounds":[31,24,70,70],"source":"https://img.pokemondb.net/sprites/black-white/normal/pikachu.png"},{"name":"Eevee","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAHlBMVEUAAAAAAABSMSBzSkqkYkq9nHvVnErmxZT/5qz////1fjcxAAAAAXRSTlMAQObYZgAAAaZJREFUeNrtmMuK7UAMA1uyLJ/5/x++pNPnxSzjcBnoIuuqyJBNxmaz2Ww2m80XGvcSjnv9uj0Ax61+wbh3wH8ISKMNBiF829U4iQIpfOpt9wbw5bcFqDPAD13IwvTfEwgbIFsD427/IAKD6z4A2wOiTQPP9yd7/SHLsoUwgH6/J7LDMgC9/RFt/gUpAUueVWgOUOLSZ1WlrgfkTxRc2Tr8HQPEr4Cw/G0B/nwXsO5z0lAAsNRcgelvDHAF+ANbr0A2FWiEJ8AzEFKlsrInYPMMEJaicARyPi0TZHlCaAYq9CSrlA0TQnbYPv1V0JNK6WIgE7Ijpv5XIHU1kI/KgJ76w59VoQ9w0f+ozIqTrIPEZyAuB/JxUJOzgIi3/2KgHvVYTHvOAQdLHxiXiMrHu7ACiCfXA/wdgNDiX5Avf+Xp17ugwLgMa+rXeahXQD3+wazTjkjoBKcfGB3wPD5CkPgKABhNENNP6RWY9jYoIDkD6xvDaGWaEbAF3uQXB2ibWoF+P2HboNg/gCLG9AsHoxkAHAOyjHEjBLD/Om02m81ms9ls/i7/AL17ENJo+9OBAAAAAElFTkSuQmCC","bounds":[30,21,67,68],"source":"https://img.pokemondb.net/sprites/black-white/normal/eevee.png"},{"name":"Bulbasaur","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAQEBAYSkoxc3M5lJRSYili1bRzrDGD7sWk1UGsADG9/3PNzc3uIDn/amL///87EAzGAAAAAXRSTlMAQObYZgAAAXhJREFUeNrt18uOgzAMheHYPjiXAnn/t53EIqgz2xpNF/4QbVbnF2XVFEIIIYQQQvhn28PzWyVKD8jDNtTxlemB+Zepteb6QMDmTc4jsfkEmH/vM+WcX9UtgFJGQhbmonT9Slsmn0ARKZOqcinvAY8CCsoEYBQsswJ5cwnI2scYN6A74FB4238P1CHnzTNQBgUscO17PIJw0XLRIvvOCoBs3yXAB6wAzP2j9Z1ngHP2DeAO9BWw/Y8Dsh8dZQTs4+it9R0Ag70CvXVoMYrWz9MCArDLfhJtDXpBa+e548KcHQJM+gfAd8L2P8MgVoWqqBEmAsQeAGBKH2P01u5t6oKB522F5FGAtNvatwJ8CkQzcZyDzRNhEsApYImF7CwAA3ZTcsCgBYYBsrfgFICqgmFYFQATvAJGoHqNAqoPBewFMIAVgO27gA62BoUFEgnmRcmHKFZgmAfe7Uo+uI8LNE+rlGhKXmhapU7pOTTFf6MQQgghhBDCt/oBWX0STCSgAbAAAAAASUVORK5CYII=","bounds":[28,30,63,63],"source":"https://img.pokemondb.net/sprites/black-white/normal/bulbasaur.png"},{"name":"Charmander","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAALVBMVEUAAAAIOYsQEBAYi7QxrO6LKQDeUjnmOQDmrFr2pAD/lEH/xWL/1Qj/1Xv///8NIPGPAAAAAXRSTlMAQObYZgAAAZNJREFUeNrtmEGygyAQRHGSbpCg9z/uJwNIYpZA1V/MW1i66ecgOKgzDMMwDMMwDOMbEsDK+PhmmYKvWJFF+a/XesFCA2Ms+VwnuPIjFxg2NsG2cYXg0UrYtg0rBGesnPJYIpBLsD3vAu/GwRYreDx5F6QJgr4KyEWCNkWJm8DvyY2DWCB6PlALSPu4QCRmADmpAmQorYLk3RCAKkS8BzMAPha0T360BCEA0WBSyKjUh+0zoyUI9X5FD8zUuSROBbv3aR8xSIsUEXbEtWfs02AJPbcj0mdpKoJxBRhC0BPIxzLY96RDNK5AeEOWltMN2eG9G0bA40249zTvofnDIBzKT08DvJsBjsJP38dL5gruBkSZOUJHuAkQJwmOxpcAmLTNQBfwMgCIs/IjryFSAUXTMwxzBNUQAqPSXnshyKRdBYLSBFSD5k8SRPkUUAVB82cJWAyg5pcrETcHKZmigkwRAG4aUlMzKGfQ+LmCOiCoHW1yfg/F/I8EOXH2mwYXGN58+XDeDPN99mvCMAzDMAzjv/EHNLEX5bVfCqwAAAAASUVORK5CYII=","bounds":[30,29,68,71],"source":"https://img.pokemondb.net/sprites/black-white/normal/charmander.png"},{"name":"Squirtle","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAQEBApc4NanKRiKQCDKQCLxc205u69agDNeynVlFLVzc3mrFr/1Wr/5pz///8R5ETqAAAAAXRSTlMAQObYZgAAAZBJREFUeNrt18Fu6zAMRFHPTMSGz7Lz/3/7KLH1omtqUUAHAbIIMDexDQE5tm3btm3btm37RYFcOP8VzFYlcn5aUmDuLyvQcn9ZgZa0KED97Esa76wONEvCeY4KqgMf2QTgpBYE2hNonyUBWPqsCfB5RFsEVB/Al8lkk5SBWqBZkpj7InmU0KEowEwcWpPEQ1b2sNJEQEDzMPchM2PRvixIkNogieDYrwrQEqgJ8FPZrD2HJGLovY9m5ZNETd6vMPZVt59ISe5X8JBBvPKzUJAA5LeHHpFZwPsdBbLs7Pb7vvodItABnBF4bg9rAncGenidI0BZqg349R2AJDPSTCgI+HV77kfgHQG8FGjGmsDd3b33CEXB3+e/9whQZqaawJ2/oPsIjGsESag6vOXXc5O9S2RtQGbji18z0GVm4gkFVO3bvP59kA2iJgBFR7b/JJgBlMwnWlDrwd2ZASIcNZDnZ8sEVHlcJ2hCawhUqA1QA/DkigM00XJ/UQEYrwdMMALHKhncf7u3bdu2bdu2P+c/t/sS533sNSIAAAAASUVORK5CYII=","bounds":[29,29,67,68],"source":"https://img.pokemondb.net/sprites/black-white/normal/squirtle.png"},{"name":"Jigglypuff","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAJ1BMVEUAAAAQEBDmc4P/rKSkECD/zcVqUmIQtO7N7v////8Yc8UQSovm5ua4ySNuAAAAAXRSTlMAQObYZgAAAUxJREFUeNrt17Guo0AQRFG6qhobhv//3h2wW168G1bw9NRHIoCgrjTSBCyttdZaa621n0DTYoXTZz0nWeczk4Sk5bW+rgzjfp5IghR57kcwzPvJcu5bArhUgB9rWALKC8QKEFXwBBjBSax9saxBR2CNWJnie178WKllsRSY4kXBmzAF8h2AECQkoQKWArMKRBDHsW0HjIE8RQVwjDH2WfAEJiETQATJCGpsz1k4RF8hcexDiKuh8ZyBsYkTPAFu+/YUXzT2MfZXAM7AAC8Y+zQOeANjDLAKj0ft+wKzwPK5B/IEkDgeD/Ei/k2mQEIiheu5kWV/qrPhNzn2mfwGQGEJIDMFfsElJsM1/reAEotBTMLEWnfuF6G494vk378L4UbmfQESSoTcJ4RTlPerff/2TpoDEbcPpLUQNV8kb+D/zf7Ja6211lpr7Tf5AwMZC8UiISb/AAAAAElFTkSuQmCC","bounds":[32,30,66,65],"source":"https://img.pokemondb.net/sprites/black-white/normal/jigglypuff.png"},{"name":"Psyduck","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAJFBMVEUAAAAQEBB7e3uDWgCUWhDetFLmpFL23ov/1Ur/5qT/7r3////nESqMAAAAAXRSTlMAQObYZgAAAVlJREFUeNrt2DFywzAMRFFusEAY6v73DRGLcmSnyiw7vBm63G+MO7dSSimllPJ/H8i3OYCdASAbewNoWwH4EN/AxtZ4akA2pPvBAPqJzHmpx/zXtBLy/Z77aV2h3z8vWAjhfsDd+x07CN3+cRyr4FMn+qQLHAdWwY/JqdzPQPJzH6sgDHhumlkGfjj6BFkg3N3GGKvgIQ1kwczHcLcInyIDyoLZyH3zTzOLpAzkfMr9MT4dykCy8bQC6A/Ysr81kPsklQG8HEDmBRFzPkIS8JcDEiPlvqTg1/fXBxLgJyBOVO0ndpziot3/JS4E9YF7Qh5YxAH2d88CqQ3cEySzog+sAmPizgvybfoNVAckxsv6Asl+BiLu49cBZFNA/AnBJgLEO1C0b2bubwmgidiY/J4A4C5LACtx8SRM2MhRtMV8PDhUN+THLWhjPrO2R8bMUH/alFJKKaUUpW9wFhmx+F+U7QAAAABJRU5ErkJggg==","bounds":[33,24,67,69],"source":"https://img.pokemondb.net/sprites/black-white/normal/psyduck.png"},{"name":"Snorlax","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAAAAAQOUExWntSi6xiQSBzWiBzc3NzpL2kc1LFnFrNzc3mxaz21b325r3///86/FQBAAAAAXRSTlMAQObYZgAAAqdJREFUeNrtmYtq20AUBTN3JTuu7mr//2+7D6SD3dryKjKFogmJCYgZnVUMAX+dnJycnPzPAB/12xDCsQW49w9D4OA7hju/JhwVkNCG4wJS1kKj+TMcGzAL39/DQji0YEU4fBfkL3BYIGRpKUh+aICQreu9z252cIFiDc0/F9wUOMifCc3fOLRA8CoN5VWFxwDsD8wP6JRY5aT9AZf3yQQSlAgHDKDwOIEhY6SdAUD66/0Emr9i+xdc4ckZIf/QtwAUEI8BM1Z/MOiwk4A/A1efG74EVn/A3g8ktBiv5uZPPAwI8qeOBTZkQGd0TdfZgbpAAwhh8fcsABsqtk64Avi8svpbIVQ6TsiGhtnDU5BfZH1vwCwMgxLYC7+QfzuQ6vIGYHeFm4V9AUEIKoSMmd1ikUd3LxNst1+BIH+ArG6UjhJ7/CoE6TNR+or9MCCY/4pbv1/w3C9sj18F+bcLxlc3yL9ZyC97C8zbgf0bUGCrYAG++oH5vYCZJnSxGYhW/RUO9muCfTZg9omAMMEn/P7hgLv/JBD/cSBGV2BHAY9b/n0BKD9KwOOGv9IfSLRvf1GI1U8LQGcgQZrAMzE+1zuJEmDqCACkdMmBCW+F+GgvuAKkrkBK0+UyM00X1kKUPUrvpJSAVAOgwEaBIrpcmB2vRCF7himrnWmagPR2YGJecBaX7AIfx7FcBE5SYAvaMajwBHRqZUxHIOpfrMiWfxkFyL8V8Eqs98ZLf7M33g+4zt1fB6RX4A3qw/PGswLe/K5rkX8DxtvtNm4Emt/H9VoN2IabCo69CGR9YdSAPQF7KyB/ZwFTQSB/ZpS/ozAufoBfnpnXL3d2DRCsAai/18riB2jPWP5e4M8/PRb0dhkz/X7ptt+Quo3jAek/BIXzA6GTk5OTT/MbtrNhrHVEiCQAAAAASUVORK5CYII=","bounds":[18,15,80,82],"source":"https://img.pokemondb.net/sprites/black-white/normal/snorlax.png"},{"name":"Togepi","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAAAAD21aTNnHNzSkr27sWUc1r////V3t7FQUG0tMUxYqxKg8WsICDec2p7i5QCgYgkAAAAAXRSTlMAQObYZgAAARtJREFUeNrt1klyBCEMRFEyNTC6ff/bOsDl4QBi1XoRRe30Q6woKaWUUkoppfRuHKW4lwLcChhcxNWIWwED1I1Ud78TMBczkhBRBcIDBzdVIRE+X8yfgJDRAREzNxjpZ/yNBUzEPj4I+lkiNACo7cQOUOIvCKRo9R0QHvEBSq1u7jzir0hEa3XfH+kevcJnVa0Pp++DACID//g5NHQHtLqttc9X772pxAZ6bztwCr3W1lVEUMJgnMKsa9baX7X1oYpSYgs78BRaH2OEB0abbc3Zxuj9dQLhhTHnGj9QQqHvwGOt+EDB3/y55p4fDfidP+ZACacC4Hs+cGM+hSI4REs8iBLYi5BypwA8fypRbgKQD+mUUkoppZTSu/oCI/AKealYpwwAAAAASUVORK5CYII=","bounds":[33,34,57,62],"source":"https://img.pokemondb.net/sprites/black-white/normal/togepi.png"},{"name":"Chikorita","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAAAABBWhhBYhhiQVpiiylqtCmDlFKD5jG0zWrFKSnFxcXV9ovue3vu/8X////PwWzjAAAAAXRSTlMAQObYZgAAAWFJREFUeNrt2LFuwzAMRVGTtEzToq3//9tKkSuobqaGHArwDIGnd0MkWbKEEEIIIYTwj6WKiNzG95tHpK8n6uojkfn8zxNME+lenxFRsirQPtZnGwFZ7b9ZbwjAJvCwTcBkn6CibbAtQIK7RADbL2QRABznTJe0589PYNYGe2Jc0rzq9GGAr+vSF1zeA1o+IFc1CvZYe8CtMA5gbi+Ltcx67+fCHifkVbvjLDk7BMqhXakF9g0cBR0+hPwdWHtAwS9wFnYI8KqiqqzHuoo4fFFRldeVRQdA64Cex6nDvoFx4CGh1hMQ0SEwoOVvmnWyb9qxKnickFAHs8CexrufsVkgYd9OqDOBxQj27SfBxQjrOyICngFxDohlAFXlOW8bEBF+7rNxQJhVeexz20ezAEsFAKgvDJVwO8Cu0Nd6AdozZDYM5NzHQJv72Wx/HgPmuu8ISmFYPAFA/JcSQgghhPAXXz27Hl9EL0ZbAAAAAElFTkSuQmCC","bounds":[33,28,72,72],"source":"https://img.pokemondb.net/sprites/black-white/normal/chikorita.png"},{"name":"Cyndaquil","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAQEBAYOUopUlI5Yntig5x7YiCsrKzFpGreAADmzWr/WgD/nAD/3gD/7qT///9vavPxAAAAAXRSTlMAQObYZgAAAYhJREFUeNrtl7FyhDAMBXmxrZPB6P7/b2NJwCU1okhGO2bodrE8LliSJEmSJEmS5G/Tz3d/KuBP3x4JmFifvj0ciPd3XRaYdiU80HWp/wwEn3Q3LHD5e6DfDtZmfwW8GECZ2Gx+B4wIe22t1VJ8+Bc9KFCaU2vZPoyxRfsnMLWusWvAuNn5qtX0RtHCrp+/79tP+nIn4DBz0YB++/SPaL8oXDBUvntgDMvcnJAjjgUMfw/VO/cCLEJgEcbuAWfc1V8BEbAoUG899CFXwQvCJAbKvlN1f4T+CkAM1Fqo1c8eAi6aHwGJss5AUyxwXOYlYAdyAA04ag8bEYvBhZnPQi394l6guZ+JJ6uIJ2oJcLu/NdUDqrejqAdF7REBm/2yqJtEOf0xAVb/Yn4S8gZbYAmB7PMnEAGJsD6eQEwBpwcWwDEn1kAsBFoBEWaZrFwQ7Geea9UNGE8E/CpgtQ2w+uMLxAw24gPQAkCEh/yvFwFeIgtEA8Df77elngOT/E1NkiRJkiRJkv/HN+u8HjORJ0rAAAAAAElFTkSuQmCC","bounds":[32,28,74,65],"source":"https://img.pokemondb.net/sprites/black-white/normal/cyndaquil.png"},{"name":"Totodile","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAKlBMVEUAAAAQEBAxWoMxg8VqtOZ7GACU1f+sgym0SlK0tLTNQSDme3v/xVL///9xhCIvAAAAAXRSTlMAQObYZgAAAYJJREFUeNrt10uOgzAQRVG/Dw6f9v632y6D1FlA0aM6UTJ8Vw5CglZKKaWUUkr5V5KayPYSu3fJtvDOfu+dvuGlAD1JNls+ddM2NYZeOYIcAXKMcdDYQnJgIo99FiieU17Abrz3MfZrBmik7vdOyiaJC3t6QL17+gsctJl4AHY/ABy4hjwhMWBL/sYInFtWAvciQS+EJ55nWgJrNc6CmwNmAWRLMAAMROnY9n3fngDAzo6EwNpeP/s0YMt+vkRLojjAfl3XDpv+yEvPCqhLWPsjAp8feUHm3YYRgY02f37oSR0tr4BxXNc2sPafAFoaGcC+jcEITLKNFraMDG0jGlxXIJAQYv9ES0DSdMDa/3xsSZj7EUiC8Pk881qFMzPAuY7Yf240agLAvAutCMQ+HagbsgJ3wS8F6AgEm74x8wC0JCrcgSdItBxUADVBXjC1NPxLQPnPwRC0EmiYFNASwfLXPw5KRG6BjvkH5PigZcL3HEzTaO8hpnqxLKWUUkop5Z/9AnWoDI6ElDxLAAAAAElFTkSuQmCC","bounds":[27,30,64,66],"source":"https://img.pokemondb.net/sprites/black-white/normal/totodile.png"},{"name":"Piplup","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAMFBMVEUAAAAIansQEBAQSnMgYpwxi9ViShBie5RipMVqpOac1fasgzm9zd72zUH/7sX///9KCTivAAAAAXRSTlMAQObYZgAAAUtJREFUeNrt17GOxDAIRdEYg0MAD///txuTbDE9lnYljjSa7l05ioscpZRSSiml/DuIvXfEffPXddEN+5Z5ugJtSuD1okffu59fIPqaTy8gETEFRNwUkJg3dzdML5xCInQJ+gOTA6dLYH8Z3SAzwN8Bxx2B2LfT/NaTA8bCHAFweAOYGjD9fPgrgBHIct77c+oKwBOI/dTAnHO4+wmnuzFGINE5pg41X8wsDpALxtBhjx776QAs8JqHY4dO/YZLJLIrSDdcOvT1o9wCdiLqEQGO50SQWcA1yhJXWIQZEAEJEgPCTW6I8R9HwMR9FmluIubGcuPsl6mtgIu4ewQaQ/JlaHCwxwmEn0D+ZWjM8XDa2m8xn18IrTHDsUN7E3v2dQxVBViRduQbU6cOiHOojh2F3/dG51Q49tGPfuDYCQDqa6+UUkoppZTyN/0AAKURr0QOrDEAAAAASUVORK5CYII=","bounds":[33,28,60,63],"source":"https://img.pokemondb.net/sprites/black-white/normal/piplup.png"},{"name":"Riolu","src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAKlBMVEUAAAAQEBAQSnspc5w5OTlKnO5aWlqDg4OLgzmkMTG0tLTeQUHexXP///+RQLTAAAAAAXRSTlMAQObYZgAAAZJJREFUeNrt2EFu6zAMRVFePpJp0/79b/dbcoR4XhooUB3AA2XwbuwMAti2bdu2bdu2XwnsVi64s4MkRicdu4Pr4O6ZyU03kIPGhfUjL7h5P92aAbqvAARReVJVbwDiwGdprk8B1oWoGfiqJSqqCpoiVNQ1EF//ijpB2x1AvOY5AkU1JmAEok7XwIR1JBiLyqr6HPtSW2EhKocaJEEtYS3wnDQxk1NgPSD14tiBOGFdwN0lh+uvjzUCPj7gerZOuH9/g2PtHo+HGZJHBBLzk87959OdFDOA5P58PvsKD3clKREHbCXaCp7KlAt7FQxJfmjaV6anwGwFDNfgPYEx72MLhUJaBW8qjJ05GpmRhxlzl/yHgfWQHc79Fwk7gP9w//VlF66BBp6TrwbKQakDLYHFpzMg0IHOfb2MgoT6ApzzCxGAQdcTwl1v7kSsfxq3BowL1wBuxDuA9QFwO1CFWX9hoa4BuDkQRfv+DKzCPPQH4n1oL4z59yTr1IaKqngH4pYAlzNgrQD2y5pt27Zt27Y/7D9uNQx5jYJRHAAAAABJRU5ErkJggg==","bounds":[26,25,68,70],"source":"https://img.pokemondb.net/sprites/black-white/normal/riolu.png"}]</script>
+  <script>
+    'use strict';
+    const POKEMON = JSON.parse(document.getElementById('pokemon-assets').textContent);
+    const ui = Object.fromEntries(['score', 'round', 'species', 'group-a', 'group-b', 'question-equation', 'answers', 'feedback', 'question-view', 'result-view', 'total-group', 'result-copy', 'result-equation', 'next', 'announcement'].map(id => [id, document.getElementById(id)]));
+    const state = { limit: 5, solved: 0, round: 0, question: null, answered: false, bag: [], lastSpecies: null, previousPair: '' };
+    function shuffle(items) {
+      const array = [...items];
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    function nextPokemon() {
+      if (!state.bag.length) {
+        state.bag = shuffle(POKEMON);
+        if (state.bag.length > 1 && state.bag[state.bag.length - 1].name === state.lastSpecies) {
+          [state.bag[0], state.bag[state.bag.length - 1]] = [state.bag[state.bag.length - 1], state.bag[0]];
+        }
+      }
+      const pokemon = state.bag.pop();
+      state.lastSpecies = pokemon.name;
+      return pokemon;
+    }
+    function makeQuestion(limit, previousPair) {
+      const pairs = [];
+      for (let a = 1; a <= Math.min(5, limit - 1); a++) {
+        for (let b = 1; b <= Math.min(5, limit - 1); b++) {
+          if (a + b <= limit && `${a},${b}` !== previousPair) pairs.push([a, b]);
+        }
+      }
+      const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
+      const total = a + b;
+      const alternatives = Array.from({ length: limit }, (_, index) => index + 1).filter(n => n !== total);
+      return { a, b, total, options: shuffle([total, ...shuffle(alternatives).slice(0, 3)]) };
+    }
+    function renderSprites(container, count, pokemon, animate = false) {
+      container.replaceChildren();
+      container.setAttribute('aria-label', `${count} ${pokemon.name} Pokémon`);
+      const grid = document.createElement('div');
+      grid.className = 'sprite-grid';
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement('span');
+        slot.className = 'sprite';
+        const img = document.createElement('img');
+        img.src = pokemon.src;
+        img.alt = '';
+        img.width = 96;
+        img.height = 96;
+        img.draggable = false;
+        const [left, top, right, bottom] = pokemon.bounds;
+        const scale = .86 / Math.max(right - left, bottom - top);
+        img.style.width = `${9600 * scale}%`;
+        img.style.height = `${9600 * scale}%`;
+        img.style.left = `${50 - (left + right) / 2 * scale * 100}%`;
+        img.style.top = `${50 - (top + bottom) / 2 * scale * 100}%`;
+        if (animate) slot.style.setProperty('--delay', `${i * 50}ms`);
+        slot.append(img);
+        grid.append(slot);
+      }
+      container.append(grid);
+    }
+    function renderEquation(container, a, b, total) {
+      container.replaceChildren();
+      const pieces = [{ text: a, className: 'num' }, { text: '+', className: 'operator' }, { text: b, className: 'num' }, { text: '=', className: 'operator' }, { text: total === null ? '?' : total, className: total === null ? 'unknown' : 'total' }];
+      pieces.forEach(piece => {
+        const span = document.createElement('span');
+        span.textContent = piece.text;
+        span.className = piece.className;
+        span.setAttribute('aria-hidden', 'true');
+        container.append(span);
+      });
+      container.setAttribute('aria-label', `${a} plus ${b} equals ${total === null ? 'how many?' : total}`);
+    }
+    function newQuestion(focusAnswers = false) {
+      state.answered = false;
+      state.round++;
+      const question = makeQuestion(state.limit, state.previousPair);
+      state.previousPair = `${question.a},${question.b}`;
+      question.pokemon = nextPokemon();
+      state.question = question;
+      ui.round.textContent = `Question ${state.round}`;
+      ui.species.textContent = question.pokemon.name;
+      ui['question-view'].hidden = false;
+      ui['result-view'].hidden = true;
+      ui['total-group'].replaceChildren();
+      ui.feedback.textContent = 'Take your time. You can do it!';
+      ui.feedback.className = 'feedback';
+      renderSprites(ui['group-a'], question.a, question.pokemon);
+      renderSprites(ui['group-b'], question.b, question.pokemon);
+      renderEquation(ui['question-equation'], question.a, question.b, null);
+      ui.answers.replaceChildren();
+      question.options.forEach(value => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'answer';
+        button.textContent = value;
+        button.setAttribute('aria-label', `${value} Pokémon`);
+        button.addEventListener('click', () => chooseAnswer(value, button));
+        ui.answers.append(button);
+      });
+      if (focusAnswers) {
+        ui.announcement.textContent = `Question ${state.round}. ${question.a} plus ${question.b}. How many Pokémon altogether?`;
+        ui.answers.firstElementChild.focus({ preventScroll: true });
+      }
+    }
+    function chooseAnswer(value, button) {
+      if (state.answered || button.disabled) return;
+      const q = state.question;
+      if (value !== q.total) {
+        button.disabled = true;
+        button.classList.add('wrong');
+        button.setAttribute('aria-label', `${value} Pokémon. Try another answer.`);
+        ui.feedback.textContent = 'Let’s count again. Try another number!';
+        ui.feedback.className = 'feedback retry';
+        ui.announcement.textContent = `${value} is not quite right. Count both groups and try again.`;
+        return;
+      }
+      state.answered = true;
+      state.solved++;
+      ui.score.textContent = `${state.solved} solved`;
+      ui['result-copy'].textContent = `${q.total} Pokémon altogether. Great counting!`;
+      renderSprites(ui['total-group'], q.total, q.pokemon, true);
+      renderEquation(ui['result-equation'], q.a, q.b, q.total);
+      ui['question-view'].hidden = true;
+      ui['result-view'].hidden = false;
+      ui.announcement.textContent = `You got it! ${q.a} plus ${q.b} equals ${q.total}. ${q.total} Pokémon altogether.`;
+      ui.next.focus({ preventScroll: true });
+    }
+    document.getElementById('difficulty').addEventListener('change', event => {
+      if (event.target.name !== 'limit') return;
+      state.limit = Number(event.target.value);
+      newQuestion();
+      ui.announcement.textContent = `Addition up to ${state.limit}. ${state.question.a} plus ${state.question.b}. How many Pokémon altogether?`;
+    });
+    ui.next.addEventListener('click', () => newQuestion(true));
+    if (POKEMON.length) newQuestion();
+    else {
+      ui.feedback.textContent = 'The Pokémon could not load. Please reopen the game.';
+      ui.answers.setAttribute('aria-disabled', 'true');
+    }
+  </script>
+</body>
+</html>
