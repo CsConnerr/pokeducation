@@ -361,7 +361,7 @@
       <section id="math-screen" hidden>
       <div class="intro">
         <div><h1 id="math-title" tabindex="-1">How many Pokémon<br><span class="intro-highlight">altogether?</span></h1><p id="math-instruction">Count each group, then choose a number.</p></div>
-        <div class="math-settings"><fieldset id="math-operation"><legend>Choose your math</legend><div class="levels"><label class="level"><input type="radio" name="operation" value="addition" checked><span>Addition +</span></label><label class="level"><input type="radio" name="operation" value="multiplication"><span>Multiplication ×</span></label></div></fieldset><div id="difficulty" class="count-setting"><div class="range-heading"><label for="count-limit">Counting range</label><output id="limit-value" for="count-limit">Up to 5</output></div><input id="count-limit" name="limit" type="range" min="5" max="100" step="5" value="5" aria-valuetext="Totals up to 5" aria-describedby="range-help"><div class="range-ticks" aria-hidden="true"><span><i></i><b>5</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>25</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>50</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>75</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>100</b></span></div><p id="range-help">Slide to choose. Each notch adds 5.</p></div></div>
+        <div class="math-settings"><fieldset id="math-operation"><legend>Choose your math</legend><div class="levels"><label class="level"><input type="radio" name="operation" value="addition" checked><span>Addition +</span></label><label class="level"><input type="radio" name="operation" value="multiplication"><span>Multiplication ×</span></label></div></fieldset><div id="difficulty" class="count-setting"><div class="range-heading"><label for="count-limit">Counting range</label><output id="limit-value" for="count-limit">2 to 5</output></div><input id="count-limit" name="limit" type="range" min="5" max="100" step="5" value="5" aria-valuetext="Totals from 2 to 5" aria-describedby="range-help"><div class="range-ticks" aria-hidden="true"><span><i></i><b>5</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>25</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>50</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>75</b></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i><b>100</b></span></div><p id="range-help">Slide up for bigger numbers. Each notch adds 5.</p></div></div>
       </div>
       <section class="game-card" id="math-card" aria-label="Pokémon math game">
         <p class="counting-tip" id="counting-tip" hidden>Each full row has 10 Pokémon. Count the full rows, then the extras.</p>
@@ -423,12 +423,20 @@
       state.lastSpecies = pokemon.name;
       return pokemon;
     }
+    function questionBounds(limit, operation = 'addition') {
+      return {
+        minTotal: limit === 5 ? 2 : Math.ceil(limit * .75),
+        minOperand: operation === 'multiplication' ? (limit === 5 ? 1 : 2) : Math.max(1, Math.floor(limit / 5)),
+        maxOperand: operation === 'multiplication' ? 10 : limit - 1
+      };
+    }
     function makeQuestion(limit, previousPair, operation = 'addition') {
+      const { minTotal, minOperand, maxOperand } = questionBounds(limit, operation);
       const pairs = [];
-      for (let a = 1; a <= (operation === 'multiplication' ? 10 : limit - 1); a++) {
-        for (let b = 1; b <= (operation === 'multiplication' ? 10 : limit - a); b++) {
+      for (let a = minOperand; a <= maxOperand; a++) {
+        for (let b = minOperand; b <= (operation === 'multiplication' ? maxOperand : limit - a); b++) {
           const total = operation === 'multiplication' ? a * b : a + b;
-          if (total <= limit && `${a},${b}` !== previousPair) pairs.push([a, b]);
+          if (total >= minTotal && total <= limit && `${a},${b}` !== previousPair) pairs.push([a, b]);
         }
       }
       const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
@@ -549,22 +557,24 @@
       ui.next.focus({ preventScroll: true });
     }
     const countLimit = document.getElementById('count-limit');
-    countLimit.addEventListener('input', () => {
-      document.getElementById('limit-value').textContent = `Up to ${countLimit.value}`;
-      countLimit.setAttribute('aria-valuetext', `Totals up to ${countLimit.value}`);
+    function updateCountLimit() {
+      const limit = Number(countLimit.value);
+      const { minTotal } = questionBounds(limit, state.operation);
+      document.getElementById('limit-value').textContent = `${minTotal} to ${limit}`;
+      countLimit.setAttribute('aria-valuetext', `Totals from ${minTotal} to ${limit}`);
       countLimit.style.setProperty('--fill', `${(Number(countLimit.value) - 5) / 95 * 100}%`);
-    });
-    countLimit.addEventListener('change', event => {
-      const limit = Number(event.target.value);
       if (limit === state.limit) return;
       state.limit = limit;
       if (state.answered) {
-        ui.announcement.textContent = `${state.operation === 'multiplication' ? 'Multiplication' : 'Addition'} up to ${state.limit} for the next question.`;
+        ui.announcement.textContent = `${state.operation === 'multiplication' ? 'Multiplication' : 'Addition'} with totals from ${minTotal} to ${limit} for the next question.`;
         return;
       }
       newQuestion();
-      ui.announcement.textContent = `${state.operation === 'multiplication' ? 'Multiplication' : 'Addition'} up to ${state.limit}. ${state.question.a} ${state.question.operation === 'multiplication' ? 'times' : 'plus'} ${state.question.b}. How many Pokémon altogether?`;
-    });
+      ui.announcement.textContent = `${state.operation === 'multiplication' ? 'Multiplication' : 'Addition'} with totals from ${minTotal} to ${limit}. ${state.question.a} ${state.question.operation === 'multiplication' ? 'times' : 'plus'} ${state.question.b}. How many Pokémon altogether?`;
+    }
+    countLimit.addEventListener('input', updateCountLimit);
+    countLimit.addEventListener('change', updateCountLimit);
+    updateCountLimit();
     document.getElementById('math-operation').addEventListener('change', event => {
       if (!['addition', 'multiplication'].includes(event.target.value)) return;
       state.operation = event.target.value;
