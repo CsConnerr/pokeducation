@@ -84,6 +84,35 @@ test('addition randomly mixes two and three numbers at every slider position', (
   }
 });
 
+test('addition mixes both question lengths without long streaks, even at random extremes', () => {
+  for (const random of [() => 0, () => 1 - Number.EPSILON, seededRandom()]) {
+    const makeQuestion = generator(random);
+    for (const [limit, minimumTotal] of ranges) {
+      const history = [];
+      let previousTerms = '';
+      for (let i = 0; i < 45; i++) {
+        const q = makeQuestion(limit, previousTerms, 'addition', history.slice(-2));
+        history.push(q.terms.length);
+        assert.ok(q.total >= minimumTotal && q.total <= limit);
+        if (history.length >= 3) {
+          assert.deepEqual([...new Set(history.slice(-3))].sort(), [2, 3]);
+        }
+        previousTerms = q.terms.join(',');
+      }
+    }
+  }
+});
+
+test('question lengths stay random and can repeat before the streak limit', () => {
+  const makeQuestion = generator(seededRandom());
+  const history = [];
+  for (let i = 0; i < 40; i++) {
+    history.push(makeQuestion(10, '', 'addition', history.slice(-2)).terms.length);
+  }
+  assert.ok(history.some((count, index) => index > 0 && count === history[index - 1]));
+  assert.ok(history.some((count, index) => index > 0 && count !== history[index - 1]));
+});
+
 test('2 + 2 + 2 is possible at 10 and offers 6 as the correct answer', () => {
   const q = generator(() => 0)(10, '', 'addition');
   assert.deepEqual(Array.from(q.terms), [2, 2, 2]);

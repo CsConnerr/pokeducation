@@ -409,7 +409,7 @@
   <script>'use strict';
     const POKEMON = JSON.parse(document.getElementById('pokemon-assets').textContent);
     const ui = Object.fromEntries(['score', 'round', 'species', 'question-equation', 'answers', 'feedback', 'question-view', 'result-view', 'total-group', 'result-copy', 'result-equation', 'next', 'announcement'].map(id => [id, document.getElementById(id)]));
-    const state = { limit: 5, operation: 'addition', solved: 0, round: 0, question: null, answered: false, bag: [], lastSpecies: null, previousTerms: '' };
+    const state = { limit: 5, operation: 'addition', solved: 0, round: 0, question: null, answered: false, bag: [], lastSpecies: null, previousTerms: '', recentAdditionCounts: [] };
     function shuffle(items) {
       const array = [...items];
       for (let i = array.length - 1; i > 0; i--) {
@@ -436,9 +436,13 @@
         maxOperand: operation === 'multiplication' ? 10 : limit - 1
       };
     }
-    function makeQuestion(limit, previousTerms, operation = 'addition') {
+    function makeQuestion(limit, previousTerms, operation = 'addition', recentAdditionCounts = []) {
       const { minTotal, minOperand, maxOperand } = questionBounds(limit, operation);
-      const termCount = operation === 'addition' && Math.random() < .5 ? 3 : 2;
+      let termCount = 2;
+      if (operation === 'addition') {
+        const [older, newer] = recentAdditionCounts.slice(-2);
+        termCount = older === newer && older !== undefined ? (newer === 2 ? 3 : 2) : (Math.random() < .5 ? 3 : 2);
+      }
       const candidates = [];
       for (let a = minOperand; a <= maxOperand; a++) {
         for (let b = minOperand; b <= (operation === 'multiplication' ? maxOperand : limit - a - (termCount === 3 ? minOperand : 0)); b++) {
@@ -507,8 +511,12 @@
     function newQuestion(focusAnswers = false) {
       state.answered = false;
       if (state.round === 0) state.round = 1;
-      const question = makeQuestion(state.limit, state.previousTerms, state.operation);
+      const question = makeQuestion(state.limit, state.previousTerms, state.operation, state.recentAdditionCounts);
       state.previousTerms = question.terms.join(',');
+      if (question.operation === 'addition') {
+        state.recentAdditionCounts.push(question.terms.length);
+        state.recentAdditionCounts = state.recentAdditionCounts.slice(-2);
+      }
       question.pokemon = nextPokemon();
       state.question = question;
       ui.round.textContent = `Question ${state.round}`;
